@@ -7,18 +7,71 @@
 //
 
 import UIKit
+import FBSDKCoreKit
+import IQKeyboardManagerSwift
+import Fabric
+import Crashlytics
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-
+    
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        // TODO: Move this to where you establish a user session
+        Fabric.sharedSDK().debug = true
+        Fabric.with([Crashlytics.self])
+
+        
+        FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
+        
+        UserDefaults.standard.set(false, forKey: "dataChanged")
+        if  UserDefaults.standard.bool(forKey: "walk_through") {
+            
+            let mainStoryBoard = UIStoryboard(name: "Main", bundle: nil)
+        if UserDefaults.standard.bool(forKey: "login") {
+            let HomController = mainStoryBoard.instantiateViewController(withIdentifier: "CustomSegue") as! MaintabBarController
+                let navigationController = UINavigationController(rootViewController: HomController)
+                navigationController.isNavigationBarHidden=false
+                window?.rootViewController = navigationController
+            }
+        else{
+                let loignviewController = mainStoryBoard.instantiateViewController(withIdentifier: "LoginController") as! LoginController
+                let navigationController = UINavigationController(rootViewController: loignviewController)
+                navigationController.isNavigationBarHidden=true
+                window?.rootViewController = navigationController
+            }
+            
+//            navigationController.navigationBar.setBackgroundImage(UIImage(), for: UIBarMetrics.default)
+//            
+//            navigationController.navigationBar.shadowImage = UIImage()
+//            navigationController.navigationBar.isTranslucent = true
+//            navigationController.view.backgroundColor = UIColor.clear
+//            navigationController.navigationBar.backgroundColor = UIColor.clear
+            
+            self.window?.makeKeyAndVisible()
+        }
+        
+        IQKeyboardManager.sharedManager().enable = true
+
+       
+       
+        
         return true
     }
+    
 
+    
+    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
+        
+        let handled = FBSDKApplicationDelegate.sharedInstance().application(app, open: url, sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as! String!, annotation: options[UIApplicationOpenURLOptionsKey.annotation])
+        
+        return handled
+    }
+    
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
         // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
