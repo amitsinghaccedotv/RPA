@@ -68,6 +68,8 @@ class My_RPAController: UIViewController,workoutDelegate{
         self.fetchWorkoutData()
         self.curWeekButton?.isSelected=true
         self.setSelectedButtonOn()
+        
+         self.showWorkoutDataforSelectedTopTab(selectedTab: workoutDuration.currentWeek.rawValue)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -185,7 +187,7 @@ class My_RPAController: UIViewController,workoutDelegate{
         self.addGraphtoView()
     }
 
-    func filterRPA(workoutArr : NSMutableArray)-> NSMutableDictionary {
+    func filterRPA(workoutArr : NSMutableArray , numberOfDays : Float)-> NSMutableDictionary {
         energizie = 0
         moblize = 0
         stablize=0
@@ -198,24 +200,9 @@ class My_RPAController: UIViewController,workoutDelegate{
             let workoutDict = dict as! Dictionary<String,Any>
             let rpaDict = workoutDict["rpa"] as! Dictionary<String,Any>
             
-//            let energizeString = String(format: "%.3f",rpaDict[RpaType.Energize.rawValue] as! Float)
-//            let stablizeString = String(format: "%.3f",rpaDict[RpaType.Stablize.rawValue] as! Float)
-//            let moblizeString  = String(format: "%.3f",rpaDict[RpaType.Moblize.rawValue] as! Float)
-            
-            
-//            let floatEnergize  = Float(energizeString)! * 100
-//            let floatStablize  = Float(stablizeString)! * 100
-//            let floatMoblize   = Float(moblizeString)!  * 100
-           
-//            energizie = energizie + floatEnergize
-//            stablize  = stablize  + floatStablize
-//            moblize   = moblize   + floatMoblize
-            
-            
-
-            let mobilizeDuration = rpaDict[RpaType.Moblize.rawValue]  as! Float * 60
-            let stablizeDuration = rpaDict[RpaType.Stablize.rawValue] as! Float * 60
-            let energizeCalories = rpaDict[RpaType.Energize.rawValue] as! Float * 35
+            let mobilizeDuration = (rpaDict[RpaType.Moblize.rawValue] as? Float)!
+            let stablizeDuration = (rpaDict[RpaType.Stablize.rawValue]as? Float)!
+            let energizeCalories = ((rpaDict[RpaType.Energize.rawValue] as? Float)!)
            
             mDuration = mDuration + mobilizeDuration
             sDuration = sDuration + stablizeDuration
@@ -224,16 +211,37 @@ class My_RPAController: UIViewController,workoutDelegate{
             
         }
         
-        let rpa_target = UserDefaults.standard.dictionary(forKey: "rpa_target")
-        let rpa_mobilise = rpa_target!["mobilise_target"] as! String
-        let rpa_stablise = rpa_target!["stablise_target"] as! String
-        let rpa_energise = rpa_target!["stablise_target"] as! String
+        if let rpa_target = UserDefaults.standard.dictionary(forKey: "rpa_target"){
+            let rpa_mobilise = rpa_target["mobilizeMinuteRPA"] as! String
+            let rpa_stablise = rpa_target["stabilizeMinuteRPA"] as! String
+            let rpa_energise = rpa_target["energizeMinuteRPA"] as! String
+            
+            moblize   = (mDuration/Float(rpa_mobilise)!) * 100
+            stablize  = (sDuration/Float(rpa_stablise)!) * 100
+            energizie = (eCalories/Float(rpa_energise)!) * 100
+            
+            mTargetminLbl?.text=rpa_mobilise
+            sTargetminLbl?.text=rpa_stablise
+            eTargetcalLbl?.text=rpa_energise
+            
+             let percentString = "%"
+            mPercentTargetLbl?.text = "\(rpa_target["mobilizeTargetRPA"] ?? "0")\(percentString)"
+            sPercentTargetLbl?.text = "\(rpa_target["stabilizeTargetRPA"] ?? "0")\(percentString)"
+            ePercentTargetLbl?.text = "\(rpa_target["energizeTargetRPA"] ?? "0")\(percentString)"
+        }
+        else{
+            moblize   = (mDuration/100) * 100
+            stablize  = (sDuration/100) * 100
+            energizie = (eCalories/100) * 100
+        }
+     
+      
         
-        moblize   = (mDuration/Float(rpa_mobilise)!) * 100
-        stablize  = (sDuration/Float(rpa_stablise)!) * 100
-        energizie = (eCalories/Float(rpa_energise)!) * 100
-        
-        
+        let filterRPADict = NSMutableDictionary()
+        filterRPADict.setValue(moblize, forKey: RpaType.Moblize.rawValue)
+        filterRPADict.setValue(stablize, forKey: RpaType.Stablize.rawValue)
+        filterRPADict.setValue(energizie, forKey: RpaType.Energize.rawValue)
+
         let percentString = "%"
         
         mPercentLbl?.text = "\(String(format: "%.2f",moblize)) \(percentString)"
@@ -245,24 +253,11 @@ class My_RPAController: UIViewController,workoutDelegate{
         sCurrentminLbl?.text = "\(sDuration)"
         eCurrentcalLbl?.text = "\(eCalories)"
         
-        mTargetminLbl?.text=rpa_mobilise
-        sTargetminLbl?.text=rpa_stablise
-        eTargetcalLbl?.text=rpa_energise
-        
-      
-        
-        let filterRPADict = NSMutableDictionary()
-        filterRPADict.setValue(moblize, forKey: RpaType.Moblize.rawValue)
-        filterRPADict.setValue(stablize, forKey: RpaType.Stablize.rawValue)
-        filterRPADict.setValue(energizie, forKey: RpaType.Energize.rawValue)
-
-        
-        
         return filterRPADict
     }
     // MARK: Add Graph to View
     func addGraphtoView(){
-        let rpaDict = self.filterRPA(workoutArr: (curWeekButton?.isSelected)! ? self.curWeekArray : (threeWeekButton?.isSelected)! ? self.threeWeekArray:self.threeMonthArray)
+        let rpaDict = self.filterRPA(workoutArr: (curWeekButton?.isSelected)! ? self.curWeekArray : (threeWeekButton?.isSelected)! ? self.threeWeekArray:self.threeMonthArray , numberOfDays: (curWeekButton?.isSelected)! ? 7:(threeWeekButton?.isSelected)! ? 21 : 90)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             let mobilizeVal = rpaDict[RpaType.Moblize.rawValue] as! Float
             let stablizeVal = rpaDict[RpaType.Stablize.rawValue] as! Float
@@ -270,22 +265,31 @@ class My_RPAController: UIViewController,workoutDelegate{
             
 //            print(mobilizeVal,stablizeVal,energizeVal)
             
-            let rpa_target = UserDefaults.standard.dictionary(forKey: "rpa_target")
-            let rpa_mobilise = rpa_target!["mobilise_target"] as! String
-            let rpa_stablise = rpa_target!["stablise_target"] as! String
-            let rpa_energise = rpa_target!["stablise_target"] as! String
-            
-            print(rpa_energise ,rpa_mobilise,rpa_stablise)
-            if(rpa_target?.count != 0){
-                self.moblizeView.data       = [mobilizeVal,Float(rpa_mobilise)!];
-                self.steblizeView.data      = [stablizeVal,Float(rpa_stablise)!];
-                self.enerzizeView.data      = [energizeVal,Float(rpa_energise)!];
+            if let rpa_target = UserDefaults.standard.dictionary(forKey: "rpa_target"){
+                let rpa_mobilise = rpa_target["mobilizeMinuteRPA"] as! String
+                let rpa_stablise = rpa_target["stabilizeMinuteRPA"] as! String
+                let rpa_energise = rpa_target["energizeMinuteRPA"] as! String
+                
+                if(rpa_target.count != 0){
+                    self.moblizeView.data       = [mobilizeVal,Float(rpa_mobilise)!];
+                    self.steblizeView.data      = [stablizeVal,Float(rpa_stablise)!];
+                    self.enerzizeView.data      = [energizeVal,Float(rpa_energise)!];
+                    
+                    
+                }
+                else{
+                    self.moblizeView.data       = [mobilizeVal,100];
+                    self.steblizeView.data      = [stablizeVal,100];
+                    self.enerzizeView.data      = [energizeVal,100];
+                }
             }
             else{
                 self.moblizeView.data       = [mobilizeVal,0];
                 self.steblizeView.data      = [stablizeVal,0];
                 self.enerzizeView.data      = [energizeVal,0];
             }
+            
+            
            
            
             self.moblizeView.barSpacing = 35;

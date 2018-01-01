@@ -85,7 +85,7 @@ class ResetPasswordController: UIViewController,connectionDelegate {
     }
     
     
-    func finishedByGettingResponse(_ result: Any) {
+    func finishedByGettingResponse(_ result: AnyObject) {
         GradientLoadingBar.sharedInstance().hide()
         Utils.removeLoaderFromController(controllerView: self.view)
         

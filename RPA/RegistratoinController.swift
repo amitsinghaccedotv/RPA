@@ -117,7 +117,7 @@ class RegistratoinController: UIViewController,connectionDelegate, UITextFieldDe
     }
    
     
-    func finishedByGettingResponse(_ result: Any) {
+    func finishedByGettingResponse(_ result: AnyObject) {
         GradientLoadingBar.sharedInstance().hide()
         self.navigationItem.setHidesBackButton(false, animated: false)
         Utils.removeLoaderFromController(controllerView: self.view)

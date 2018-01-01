@@ -51,7 +51,7 @@ class MaintabBarController: UITabBarController ,connectionDelegate{
     }
     
     // MARK: Connection Delegates
-    func finishedByGettingResponse(_ result: Any) {
+    func finishedByGettingResponse(_ result: AnyObject) {
         GradientLoadingBar.sharedInstance().hide()
         Utils.removeLoaderFromController(controllerView: appDelegate.window!)
         print(result)

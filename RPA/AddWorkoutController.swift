@@ -95,7 +95,7 @@ class AddWorkoutController: UIViewController,CustomPopOverDelegate,UITextFieldDe
             switch sender.tag{
             case 1000:
                     isActivityTypeSelected = true
-                    popoverheight = 300
+                    popoverheight = 400
                 break
             case 1001:
                     isActivityTypeSelected = false

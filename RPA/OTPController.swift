@@ -74,7 +74,7 @@ class OTPController: UIViewController,connectionDelegate, UITextFieldDelegate {
          _ = navigationController?.popViewController(animated: true)
     }
     
-    func finishedByGettingResponse(_ result: Any) {
+    func finishedByGettingResponse(_ result: AnyObject) {
         GradientLoadingBar.sharedInstance().hide()
         Utils.removeLoaderFromController(controllerView: self.view)
         

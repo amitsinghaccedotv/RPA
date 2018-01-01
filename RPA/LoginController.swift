@@ -80,7 +80,7 @@ class LoginController: UIViewController ,connectionDelegate,UITextFieldDelegate{
 
     @IBAction func loginClicked(_ sender: Any) {
         UserDefaults.standard.set(false, forKey: "isSocial")
-        if((usrTextFeild.text?.characters.count)! > 0 && (pswrdTextField.text?.characters.count)! > 0){
+        if((usrTextFeild.text?.count)! > 0 && (pswrdTextField.text?.count)! > 0){
 
             if(Utils.validateEmail(candidate: usrTextFeild.text!)){
                 GradientLoadingBar.sharedInstance().show()
@@ -97,7 +97,7 @@ class LoginController: UIViewController ,connectionDelegate,UITextFieldDelegate{
             }
         }
         else{
-            if(usrTextFeild.text?.characters.count)!>0{
+            if(usrTextFeild.text?.count)!>0{
                 Utils.showAlerttoView(controller: self, message: "Please enter password.", messageType: .error)
                 pswrdTextField.placeholderColor=UIColor.red
                 pswrdTextField.borderInactiveColor=UIColor.red
@@ -122,23 +122,56 @@ class LoginController: UIViewController ,connectionDelegate,UITextFieldDelegate{
     }
     
     
-    func finishedByGettingResponse(_ result: Any) {
+    func finishedByGettingResponse(_ result: AnyObject) {
         print(result)
-        UserDefaults.standard.set(true, forKey: "login")
-        UserDefaults.standard.set(result, forKey: "profileData")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if self.isFromModel {
-                self.dismiss(animated: true, completion: nil)
-                self.isFromModel = false
+        Utils.removeLoaderFromController(controllerView: self.view)
+        GradientLoadingBar.sharedInstance().hide()
+       
+        
+        let resultDict = result as? NSDictionary
+            if let userInfo = resultDict?.value(forKey: "userInfo"){
+                let userDetails = NSMutableDictionary()
+                userDetails.setValue(userInfo, forKey: "userInfo")
+                userDetails.setValue(resultDict?.value(forKey: "access_token"), forKey: "access_token")
+                UserDefaults.standard.set(true, forKey: "login")
+                UserDefaults.standard.set(userDetails, forKey: "profileData")
+                self.getProfle()
             }
             else{
-                Utils.removeLoaderFromController(controllerView: self.view)
-                GradientLoadingBar.sharedInstance().hide()
-                self.performSegue(withIdentifier: "CustomSegue", sender: nil)
+                
+                UserDefaults.standard.set(resultDict, forKey: "rpa_target")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    if self.isFromModel {
+                        self.dismiss(animated: true, completion: nil)
+                        self.isFromModel = false
+                    }
+                    else{
+                        Utils.removeLoaderFromController(controllerView: self.view)
+                        GradientLoadingBar.sharedInstance().hide()
+                        self.performSegue(withIdentifier: "CustomSegue", sender: nil)
+                        
+                    }
+                    
+                    
+                }
 
             }
             
-
+        
+        
+    }
+    
+    
+    func getProfle(){
+        
+        if let loggedInUserData = UserDefaults.standard.value(forKey: "profileData") as? NSMutableDictionary{
+            let userInfo = loggedInUserData.value(forKey: "userInfo") as! Dictionary <String , Any>
+            GradientLoadingBar.sharedInstance().show()
+            Utils.addLoaderToController(controllerView:self.view)
+            let connectionClass = Connection()
+            connectionClass.delegate=self
+            let params = ["": ""]
+            connectionClass.connectToGetHealthProfile(userID: userInfo["userId"] as! Int , parameters: params, token:loggedInUserData["access_token"] as! String)
         }
         
     }

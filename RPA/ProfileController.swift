@@ -62,23 +62,27 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
             print("error occurred!")
         }
         self.addImagePicker()
-        let loggedInUserData = UserDefaults.standard.value(forKey: "profileData") as! NSMutableDictionary
-        let userInfo = loggedInUserData.value(forKey: "userInfo") as! Dictionary <String , Any>
-        if UserDefaults.standard.bool(forKey: "isSocial"){
-            print(UserDefaults.standard.value(forKey: "social_profile")!)
-            let socialDict = UserDefaults.standard.value(forKey: "social_profile") as! Dictionary<String,Any>
-            print(socialDict)
-            let pictureDict  = socialDict["picture"] as! Dictionary<String,Any>
-            let dataDict = pictureDict["data"] as! NSMutableDictionary
-    
-            let imageUrl = URL.init(string: dataDict["url"] as! String)
-            self.profileButton.sd_setImage(with: imageUrl, for: .normal, completed: nil)
+        
+        if let loggedInUserData = UserDefaults.standard.value(forKey: "profileData") as? NSMutableDictionary{
+           
+            let userInfo = loggedInUserData.value(forKey: "userInfo") as! Dictionary <String , Any>
+            if UserDefaults.standard.bool(forKey: "isSocial"){
+                print(UserDefaults.standard.value(forKey: "social_profile")!)
+                let socialDict = UserDefaults.standard.value(forKey: "social_profile") as! Dictionary<String,Any>
+                print(socialDict)
+                let pictureDict  = socialDict["picture"] as! Dictionary<String,Any>
+                let dataDict = pictureDict["data"] as! NSMutableDictionary
+                
+                let imageUrl = URL.init(string: dataDict["url"] as! String)
+                self.profileButton.sd_setImage(with: imageUrl, for: .normal, completed: nil)
+            }
+            else{
+                let userId = userInfo["userId"]
+                self.profileButton .setImage(Utils.getImagefile(fileName: ("profile"+"\(userId)"+".png" ?? "")), for: .normal)
+            }
+            self.updateProfileData(response: userInfo)
         }
-        else{
-            let userId = userInfo["userId"]
-            self.profileButton .setImage(Utils.getImagefile(fileName: ("profile"+"\(userId)"+".png")), for: .normal)
-        }
-        self.updateProfileData(response: userInfo)
+        
         
         
         self.profileButton.layer.cornerRadius = (profileButton.frame.size.width)/2
@@ -109,6 +113,7 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
     }
     //MARK : Reload Navigation Items
     func relaodNavigationItems(){
+       
         if isEditingON {
             self.saveButton.setTitle("SAVE", for: UIControlState.normal)
             self.tabBarController?.navigationItem.rightBarButtonItem=UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(editClicked))
@@ -163,14 +168,16 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
     func getProfle(){
         
     
-        let loggedInUserData = UserDefaults.standard.value(forKey: "profileData") as! NSMutableDictionary
-        let userInfo = loggedInUserData.value(forKey: "userInfo") as! Dictionary <String , Any>
-        GradientLoadingBar.sharedInstance().show()
-        Utils.addLoaderToController(controllerView:appDelegate.window!)
-        let connectionClass = Connection()
-        connectionClass.delegate=self
-        let params = ["": ""]
-        connectionClass.connectToGetHealthProfile(userID: userInfo["userId"] as! Int , parameters: params, token:loggedInUserData["access_token"] as! String)
+        if let loggedInUserData = UserDefaults.standard.value(forKey: "profileData") as? NSMutableDictionary{
+            let userInfo = loggedInUserData.value(forKey: "userInfo") as! Dictionary <String , Any>
+            GradientLoadingBar.sharedInstance().show()
+            Utils.addLoaderToController(controllerView:appDelegate.window!)
+            let connectionClass = Connection()
+            connectionClass.delegate=self
+            let params = ["": ""]
+            connectionClass.connectToGetHealthProfile(userID: userInfo["userId"] as! Int , parameters: params, token:loggedInUserData["access_token"] as! String)
+        }
+      
     }
     // MARK: Workout Delegates
     func finishedByGettingHelathData(_result: NSDictionary) {
@@ -180,7 +187,7 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
         print("unable to fetch workout data")
     }
     // MARK: Connection Delegates
-    func finishedByGettingResponse(_ result: Any) {
+    func finishedByGettingResponse(_ result: AnyObject) {
         let response = result as! Dictionary<String, Any>
         isFirstTimeUser = false
         GradientLoadingBar.sharedInstance().hide()
@@ -215,9 +222,13 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
                    
                     if(self.mMinuteTxtField.text?.count != 0 && self.sMinuteTxtField.text?.count != 0 && self.cMinuteTxtField.text?.count != 0){
                         let rpa_targetData = NSMutableDictionary()
-                        rpa_targetData.setValue(self.mMinuteTxtField.text, forKey: "mobilise_target")
-                        rpa_targetData.setValue(self.sMinuteTxtField.text, forKey: "stablise_target")
-                        rpa_targetData.setValue(self.cMinuteTxtField.text, forKey: "energise_target")
+                        rpa_targetData.setValue(self.mMinuteTxtField.text, forKey: "mobilizeMinuteRPA")
+                        rpa_targetData.setValue(self.mRPATxtField.text, forKey: "mobilizeTargetRPA")
+                        rpa_targetData.setValue(self.sMinuteTxtField.text, forKey: "stabilizeMinuteRPA")
+                        rpa_targetData.setValue(self.sRPATxtField.text, forKey: "stabilizeTargetRPA")
+                        rpa_targetData.setValue(self.cMinuteTxtField.text, forKey: "energizeMinuteRPA")
+                        rpa_targetData.setValue(self.cRPATxtField.text, forKey: "energizeTargetRPA")
+                        rpa_targetData.setValue(self.cCaloriesTxtField.text, forKey: "energizeTargetCalories")
                         UserDefaults.standard.set(rpa_targetData, forKey: "rpa_target")
                     }
                 }
@@ -269,7 +280,7 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
     }
     func validateBeforeSaving(){
         
-        if fullNameTxtField.text?.count != 0 && emailTxtField.text?.count != 0 && mMinuteTxtField.text?.count != 0 && sMinuteTxtField.text?.count != 0 &&  cMinuteTxtField.text?.count != 0  {
+        if fullNameTxtField.text?.count != 0 && emailTxtField.text?.count != 0 && mMinuteTxtField.text?.count != 0 && sMinuteTxtField.text?.count != 0 &&  cMinuteTxtField.text?.count != 0 && mRPATxtField.text?.count != 0 && sRPATxtField.text?.count != 0 && cRPATxtField.text?.count != 0 && cCaloriesTxtField.text?.count != 0 {
             self.setProfileEditable()
             let loggedInUserData = UserDefaults.standard.value(forKey: "profileData") as! NSMutableDictionary
             let userInfo = loggedInUserData.value(forKey: "userInfo") as! Dictionary <String , Any>
@@ -277,7 +288,7 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
             let accessToken = "\(loggedInUserData["access_token"] ?? "")"
             let gender = maleButton.isSelected ? "Male" : "Female"
             
-            let params = ["gender" : String(gender),"height" : heightTxtField.text , "weight" : weightTxtField.text,"bmi" : bmiTxtField.text , "mobilize" : mMinuteTxtField.text , "stabilize" : sMinuteTxtField.text,"energize" : cMinuteTxtField.text , "userId" : String(userID)]
+            let params = ["gender" : String(gender),"height" : heightTxtField.text , "weight" : weightTxtField.text,"bmi" : bmiTxtField.text , "mobilizeMinuteRPA" : mMinuteTxtField.text ,"mobilizeTargetRPA" : mRPATxtField.text , "stabilizeMinuteRPA" : sMinuteTxtField.text,"stabilizeTargetRPA" : sRPATxtField.text ,"energizeMinuteRPA" : cMinuteTxtField.text ,"energizeTargetRPA" : cRPATxtField.text ,"energizeTargetCalories" : cCaloriesTxtField.text , "userId" : String(userID), ]
             
             
             GradientLoadingBar.sharedInstance().show()
@@ -302,30 +313,30 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
                 emailTxtField.placeholderColor=UIColor.red
                 emailTxtField.borderInactiveColor=UIColor.red
             }
-//            if(mRPATxtField.text?.count) == 0 {
-//                mRPATxtField.placeholderColor=UIColor.red
-//                mRPATxtField.borderInactiveColor=UIColor.red
-//            }
+            if(mRPATxtField.text?.count) == 0 {
+                mRPATxtField.placeholderColor=UIColor.red
+                mRPATxtField.borderInactiveColor=UIColor.red
+            }
             if(mMinuteTxtField.text?.count) == 0 {
                 mMinuteTxtField.placeholderColor=UIColor.red
                 mMinuteTxtField.borderInactiveColor=UIColor.red
             }
-//            if(sRPATxtField.text?.count == 0){
-//                sRPATxtField.placeholderColor=UIColor.red
-//                sRPATxtField.borderInactiveColor=UIColor.red
-//            }
+            if(sRPATxtField.text?.count == 0){
+                sRPATxtField.placeholderColor=UIColor.red
+                sRPATxtField.borderInactiveColor=UIColor.red
+            }
             if(sMinuteTxtField.text?.count == 0){
                 sMinuteTxtField.placeholderColor=UIColor.red
                 sMinuteTxtField.borderInactiveColor=UIColor.red
             }
-//            if(cRPATxtField.text?.count == 0){
-//                cRPATxtField.placeholderColor=UIColor.red
-//                cRPATxtField.borderInactiveColor=UIColor.red
-//            }
-//            if(cCaloriesTxtField.text?.count == 0){
-//                cCaloriesTxtField.placeholderColor=UIColor.red
-//                cCaloriesTxtField.borderInactiveColor=UIColor.red
-//            }
+            if(cRPATxtField.text?.count == 0){
+                cRPATxtField.placeholderColor=UIColor.red
+                cRPATxtField.borderInactiveColor=UIColor.red
+            }
+            if(cCaloriesTxtField.text?.count == 0){
+                cCaloriesTxtField.placeholderColor=UIColor.red
+                cCaloriesTxtField.borderInactiveColor=UIColor.red
+            }
             if(cMinuteTxtField.text?.count == 0){
                 cMinuteTxtField.placeholderColor=UIColor.red
                 cMinuteTxtField.borderInactiveColor=UIColor.red
@@ -353,26 +364,26 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
             emailTxtField.placeholderColor=UIColor.darkGray
             emailTxtField.borderInactiveColor=UIColor.darkGray
         
-//            mRPATxtField.placeholderColor=UIColor.black
-//            mRPATxtField.borderInactiveColor=UIColor.black
+            mRPATxtField.placeholderColor=UIColor.black
+            mRPATxtField.borderInactiveColor=UIColor.black
         
             mMinuteTxtField.placeholderColor=UIColor.darkGray
             mMinuteTxtField.borderInactiveColor=UIColor.darkGray
         
-//            sRPATxtField.placeholderColor=UIColor.black
-//            sRPATxtField.borderInactiveColor=UIColor.black
+            sRPATxtField.placeholderColor=UIColor.black
+            sRPATxtField.borderInactiveColor=UIColor.black
         
             sMinuteTxtField.placeholderColor=UIColor.darkGray
             sMinuteTxtField.borderInactiveColor=UIColor.darkGray
         
-//            cRPATxtField.placeholderColor=UIColor.black
-//            cRPATxtField.borderInactiveColor=UIColor.black
+            cRPATxtField.placeholderColor=UIColor.black
+            cRPATxtField.borderInactiveColor=UIColor.black
         
             cMinuteTxtField.placeholderColor=UIColor.darkGray
             cMinuteTxtField.borderInactiveColor=UIColor.darkGray
         
-//            cCaloriesTxtField.placeholderColor=UIColor.black
-//            cCaloriesTxtField.borderInactiveColor=UIColor.black
+            cCaloriesTxtField.placeholderColor=UIColor.black
+            cCaloriesTxtField.borderInactiveColor=UIColor.black
        
             heightTxtField.placeholderColor=UIColor.darkGray
             heightTxtField.borderInactiveColor=UIColor.darkGray
@@ -392,8 +403,8 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
                 femaleButton.isSelected=false
             break
         case gender.Female.rawValue:
-            maleButton.isSelected=false
-            femaleButton.isSelected=true
+                maleButton.isSelected=false
+                femaleButton.isSelected=true
             break
         default:
             break
@@ -426,9 +437,13 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
             self.heightTxtField.text=ProfileDict.value(forKey: "height") as? String
             self.weightTxtField.text=ProfileDict.value(forKey: "weight") as? String
             self.bmiTxtField.text=ProfileDict.value(forKey: "bmi") as? String
-            self.mMinuteTxtField.text=ProfileDict.value(forKey: "mobilize") as? String
-            self.sMinuteTxtField.text=ProfileDict.value(forKey: "stabilize") as? String
-            self.cMinuteTxtField.text=ProfileDict.value(forKey: "energize") as? String
+            self.mMinuteTxtField.text=ProfileDict.value(forKey: "mobilizeMinuteRPA") as? String
+            self.mRPATxtField.text=ProfileDict.value(forKey: "mobilizeTargetRPA") as? String
+            self.sMinuteTxtField.text=ProfileDict.value(forKey: "stabilizeMinuteRPA") as? String
+            self.sRPATxtField.text=ProfileDict.value(forKey: "stabilizeTargetRPA") as? String
+            self.cMinuteTxtField.text=ProfileDict.value(forKey: "energizeMinuteRPA") as? String
+            self.cRPATxtField.text=ProfileDict.value(forKey: "energizeTargetRPA") as? String
+            self.cCaloriesTxtField.text=ProfileDict.value(forKey: "energizeTargetCalories") as? String
             
         }
     }
@@ -444,6 +459,9 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
                 }
             }
             
+            return false
+        }
+        else if textField == bmiTxtField{
             return false
         }
         return true
@@ -517,7 +535,10 @@ class ProfileController: UIViewController,UITextFieldDelegate,connectionDelegate
         self.mMinuteTxtField.isEnabled=isEditingON
         self.sMinuteTxtField.isEnabled=isEditingON
         self.cMinuteTxtField.isEnabled=isEditingON
-       
+        self.mRPATxtField.isEnabled=isEditingON
+        self.cRPATxtField.isEnabled=isEditingON
+        self.sRPATxtField.isEnabled=isEditingON
+        self.cCaloriesTxtField.isEnabled=isEditingON
         self.maleButton.isUserInteractionEnabled=isEditingON
         self.femaleButton.isUserInteractionEnabled=isEditingON
     }

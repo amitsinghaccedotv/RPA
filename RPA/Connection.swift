@@ -114,15 +114,15 @@ class Connection: NSObject,connectionDelegate {
                         
                         if let id = response.result.value as? NSNull {
                             print(id);
-                            self.delegate?.finishedByGettingResponse!("success")
+                            self.delegate?.finishedByGettingResponse!("success" as AnyObject)
                             return
                         }
                         let jsonResponse = response.result.value as! Dictionary<String,Any>
                         if((jsonResponse["errorCode"]) == nil && (jsonResponse["error"]) == nil){
-                            self.delegate?.finishedByGettingResponse!(response.result.value as Any)
+                            self.delegate?.finishedByGettingResponse!(response.result.value as AnyObject)
                         }
                         else{
-                            self.delegate?.failedByGettingResponse!(response.result.value as Any)
+                            self.delegate?.failedByGettingResponse!(response.result.value as AnyObject)
                         }
                         
                         
@@ -130,8 +130,8 @@ class Connection: NSObject,connectionDelegate {
                     }
                     break
                 case .failure(_):
-                    print(response.result.error as Any)
-                    self.delegate?.failedByGettingResponse!(response.result.error as Any)
+                    print(response.result.error as AnyObject)
+                    self.delegate?.failedByGettingResponse!(response.result.error as AnyObject)
                     break
                 }
             }
@@ -149,28 +149,28 @@ class Connection: NSObject,connectionDelegate {
                 Alamofire.request(url, method: .get, parameters: nil, encoding: JSONEncoding.default, headers: headers)
                     .responseJSON { response in
                         if(response.result.isSuccess){
-                            self.delegate?.finishedByGettingResponse!(response.result.value as Any)
+                            self.delegate?.finishedByGettingResponse!(response.result.value as AnyObject)
                         }
                         else{
-                            self.delegate?.failedByGettingResponse!(response.result.value as Any)
+                            self.delegate?.failedByGettingResponse!(response.result.value as AnyObject)
                         }
                 }
             }else{
                 Alamofire.request(url).responseJSON(completionHandler: {
                     response in
                     if(response.result.isSuccess){
-                        print("success",response.result.value as Any);
+                        print("success",response.result.value as AnyObject);
                         if(requestName == "GetProfile"){
-                            self.delegate?.finishedByGettingResponse!(response.result as Any)
+                            self.delegate?.finishedByGettingResponse!(response.result as AnyObject)
                         }
                         else{
-                            self.delegate?.finishedByGettingResponse!(response.response?.statusCode as Any)
+                            self.delegate?.finishedByGettingResponse!(response.response?.statusCode as AnyObject)
                         }
                         
                     }
                     else{
                         print("failed");
-                        self.delegate?.failedByGettingResponse!(response.result.error as Any)
+                        self.delegate?.failedByGettingResponse!(response.result.error as AnyObject)
                     }
                 })
             }
@@ -186,8 +186,8 @@ class Connection: NSObject,connectionDelegate {
 
 
 @objc protocol connectionDelegate {
-    @objc optional func finishedByGettingResponse(_ result:Any)
-    @objc optional func failedByGettingResponse(_ result:Any)
+    @objc optional func finishedByGettingResponse(_ result:AnyObject)
+    @objc optional func failedByGettingResponse(_ result:AnyObject)
     @objc optional func failedToConnect()
 }
 
